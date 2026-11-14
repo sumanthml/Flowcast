@@ -3,8 +3,8 @@ import './globals.css';
 import { InventoryProvider } from '@/lib/store/inventory-store';
 
 export const metadata: Metadata = {
-  title: 'FlowCast TOC - Explainable Inventory Planning Platform',
-  description: 'Explainable retail inventory planning platform with Theory of Computation Finite Automaton state classification and statistical demand forecasting.',
+  title: 'FlowCast Enterprise - Intelligent Retail Demand & Replenishment',
+  description: 'Explainable retail inventory planning platform with statistical demand forecasting and automated replenishment optimization.',
 };
 
 export default function RootLayout({

@@ -94,7 +94,7 @@ export default function HomePage() {
       <footer className="border-t border-slate-900 bg-slate-950/90 py-4 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p>
-            FlowCast TOC • Explainable Inventory Planning Platform • Theory of Computation Finite Automaton Model
+            FlowCast Enterprise • Intelligent Retail Demand & Replenishment Platform
           </p>
           <p className="text-[11px] text-slate-400">
             Advisory decision-support engine • Recommendations never auto-place external orders

@@ -23,7 +23,8 @@ import {
   BarChart2, 
   Info,
   Calendar,
-  Layers
+  Layers,
+  ChevronDown
 } from 'lucide-react';
 
 interface ForecastingTabProps {
@@ -49,21 +50,17 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
     );
   }
 
-  // Filter sales for this product
   const productSales = sales.filter(s => s.productId === activeProduct.id);
   const forecast = generateDemandForecast(activeProduct.id, productSales, selectedMethod, horizonDays);
   const historySeries = buildDailyTimeSeries(productSales, 45);
 
-  // Combine historical and forecast points for continuous chart visualization
   const chartData = [
     ...historySeries.map(h => ({
-      date: h.date.slice(5), // MM-DD
+      date: h.date.slice(5),
       actualSales: h.quantity,
       forecastDemand: null,
       confidence80Upper: null,
       confidence80Lower: null,
-      confidence95Upper: null,
-      confidence95Lower: null,
     })),
     ...forecast.forecastPoints.map(f => ({
       date: f.date.slice(5),
@@ -71,33 +68,31 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
       forecastDemand: f.expectedDemand,
       confidence80Upper: f.upperConfidence80,
       confidence80Lower: f.lowerConfidence80,
-      confidence95Upper: f.upperConfidence95,
-      confidence95Lower: f.lowerConfidence95,
     }))
   ];
 
   return (
     <div className="space-y-6">
       
-      {/* Header & SKU Selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800">
+      {/* Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950/30 to-slate-900 border border-slate-800 shadow-xl">
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-indigo-400" />
-            <span>Statistical Demand Forecasting</span>
+            <span>Demand Forecasting & Sales Velocity</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Real time-series algorithms with rolling backtesting and confidence intervals.
+            Empirical time-series forecasting with rolling out-of-sample backtesting and confidence bands.
           </p>
         </div>
 
-        {/* Product Dropdown */}
+        {/* Product Picker */}
         <div className="flex items-center gap-3">
-          <label className="text-xs text-slate-400">Select Product:</label>
+          <label className="text-xs text-slate-400">Target Product:</label>
           <select
             value={activeProduct.id}
             onChange={(e) => setActiveProductId(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none"
           >
             {products.map(p => (
               <option key={p.id} value={p.id}>
@@ -108,26 +103,26 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
         </div>
       </div>
 
-      {/* Model Controls Bar */}
-      <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+      {/* Model Controls Ribbon */}
+      <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 flex flex-wrap items-center justify-between gap-4">
         
-        {/* Method Switcher */}
+        {/* Model Switcher */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1">Algorithm:</span>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Model:</span>
           {[
-            { id: 'auto', label: 'Auto-Select (Lowest RMSE)' },
-            { id: 'sma', label: 'Simple Moving Avg' },
-            { id: 'wma', label: 'Weighted Moving Avg' },
-            { id: 'ses', label: 'Single Exponential (SES)' },
-            { id: 'holt', label: "Holt's Linear Trend" },
-            { id: 'croston', label: "Croston's Intermittent" },
+            { id: 'auto', label: 'Auto (Best Fit)' },
+            { id: 'sma', label: 'Moving Avg' },
+            { id: 'wma', label: 'Weighted Decay' },
+            { id: 'ses', label: 'Exponential' },
+            { id: 'holt', label: "Holt's Trend" },
+            { id: 'croston', label: "Intermittent (Croston's)" },
           ].map(m => (
             <button
               key={m.id}
               onClick={() => setSelectedMethod(m.id as any)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                 selectedMethod === m.id
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-indigo-600 text-white shadow-md'
                   : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700'
               }`}
             >
@@ -138,7 +133,7 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
 
         {/* Horizon selector */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400">Horizon:</span>
+          <span className="text-xs text-slate-400">Projection Horizon:</span>
           {[14, 30, 60].map(days => (
             <button
               key={days}
@@ -155,8 +150,8 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
         </div>
       </div>
 
-      {/* Active Model Label & Disclaimer */}
-      <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs">
+      {/* Active Model Indicator */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 text-xs gap-2">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-indigo-400">Active Formulation:</span>
           <span className="text-slate-200">{forecast.methodLabel}</span>
@@ -164,20 +159,20 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
             Statistical Estimate
           </span>
         </div>
-        <div className="text-slate-400 text-[11px]">
-          Based on {forecast.historicalDaysCount} days history ({forecast.totalHistoricalVolume} units sold)
+        <div className="text-slate-400 text-[11px] font-mono">
+          Evaluated from {forecast.historicalDaysCount} days history ({forecast.totalHistoricalVolume} units sold)
         </div>
       </div>
 
-      {/* Main Interactive Time-Series Chart */}
+      {/* Main Demand Visualization */}
       <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
           <div>
             <h3 className="text-sm font-bold text-white">
-              Daily Historical Demand & Forward Projection Horizon
+              Daily Historical Sales & Forward Forecast Demand
             </h3>
-            <p className="text-xs text-slate-400">
-              Blue bars represent actual daily transactions; Indigo line is the projected mean; Shaded band is the 80% confidence interval.
+            <p className="text-xs text-slate-400 mt-0.5">
+              Cyan line tracks recorded daily orders; Indigo line is the projected mean demand with shaded 80% confidence corridor.
             </p>
           </div>
         </div>
@@ -186,10 +181,6 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
               <defs>
-                <linearGradient id="actualSalesGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.1}/>
-                </linearGradient>
                 <linearGradient id="ci80Grad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#818cf8" stopOpacity={0.25}/>
                   <stop offset="95%" stopColor="#818cf8" stopOpacity={0.05}/>
@@ -209,17 +200,15 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
               />
               <Legend wrapperStyle={{ fontSize: '0.75rem', paddingTop: '10px' }} />
               
-              {/* Actual Sales */}
               <Line 
                 type="monotone" 
                 dataKey="actualSales" 
                 stroke="#06b6d4" 
                 strokeWidth={2} 
-                dot={{ r: 2, fill: '#06b6d4' }} 
-                name="Actual Daily Sales" 
+                dot={{ r: 2.5, fill: '#06b6d4' }} 
+                name="Actual Sales (Units)" 
               />
               
-              {/* Confidence Interval 80% */}
               <Area 
                 type="monotone" 
                 dataKey="confidence80Upper" 
@@ -234,7 +223,6 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
                 fill="#0f172a" 
               />
 
-              {/* Point Forecast */}
               <Line 
                 type="monotone" 
                 dataKey="forecastDemand" 
@@ -242,70 +230,71 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
                 strokeWidth={3} 
                 strokeDasharray="4 4" 
                 dot={false} 
-                name="Forecast Demand" 
+                name="Projected Demand (Units)" 
               />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Backtesting Accuracy Scorecard */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Model Backtesting Scorecard */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-          <span className="text-[11px] uppercase font-semibold text-slate-400 block">MAE (Mean Absolute Error)</span>
+          <span className="text-[11px] uppercase font-bold text-slate-400 block">Forecast Accuracy</span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-white">
-              {forecast.backtestMetrics ? `${forecast.backtestMetrics.mae} units` : 'N/A'}
+            <span className="text-2xl font-black text-emerald-400">
+              {forecast.backtestMetrics ? `${Math.max(0, 100 - forecast.backtestMetrics.mape).toFixed(1)}%` : 'N/A'}
             </span>
           </div>
-          <p className="text-[10px] text-slate-400 mt-1">Average absolute difference between actual & predicted.</p>
+          <p className="text-[10px] text-slate-400 mt-1">Based on {forecast.backtestMetrics?.sampleSize || 14} days rolling test window.</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-          <span className="text-[11px] uppercase font-semibold text-slate-400 block">MAPE (Accuracy % Error)</span>
+          <span className="text-[11px] uppercase font-bold text-slate-400 block">Average Error (MAE)</span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-emerald-400">
-              {forecast.backtestMetrics ? `${forecast.backtestMetrics.mape}%` : 'N/A'}
+            <span className="text-2xl font-black text-white">
+              {forecast.backtestMetrics ? `±${forecast.backtestMetrics.mae}` : 'N/A'}
             </span>
+            <span className="text-xs text-slate-400">units/day</span>
           </div>
-          <p className="text-[10px] text-slate-400 mt-1">Mean percentage error across active sales days.</p>
+          <p className="text-[10px] text-slate-400 mt-1">Mean absolute discrepancy over active sales.</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-          <span className="text-[11px] uppercase font-semibold text-slate-400 block">RMSE (Root Mean Square)</span>
+          <span className="text-[11px] uppercase font-bold text-slate-400 block">Root Mean Square (RMSE)</span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-white">
+            <span className="text-2xl font-black text-white">
               {forecast.backtestMetrics ? `${forecast.backtestMetrics.rmse}` : 'N/A'}
             </span>
           </div>
-          <p className="text-[10px] text-slate-400 mt-1">Penalizes large outlier forecast errors heavily.</p>
+          <p className="text-[10px] text-slate-400 mt-1">Measures penalty for volatile sales surges.</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-          <span className="text-[11px] uppercase font-semibold text-slate-400 block">Tracking Signal (Bias)</span>
+          <span className="text-[11px] uppercase font-bold text-slate-400 block">Tracking Signal (Bias)</span>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="text-xl font-bold text-indigo-400">
+            <span className="text-2xl font-black text-indigo-400">
               {forecast.backtestMetrics ? `${forecast.backtestMetrics.trackingSignal}` : 'N/A'}
             </span>
           </div>
-          <p className="text-[10px] text-slate-400 mt-1">Values between -4 and +4 indicate unbiased forecasting.</p>
+          <p className="text-[10px] text-slate-400 mt-1">Zero indicates perfectly balanced predictions.</p>
         </div>
 
       </div>
 
-      {/* Honest Limitations & Model Documentation */}
-      <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3">
+      {/* Assumptions & Integrity Note */}
+      <div className="p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2.5">
         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
           <Info className="w-4 h-4 text-indigo-400" />
-          <span>Model Assumptions, Data Coverage & Limitations</span>
+          <span>Model Assumptions & Operating Limitations</span>
         </h4>
         <ul className="list-disc list-inside space-y-1 text-xs text-slate-400 leading-relaxed">
           {forecast.limitations.map((lim, idx) => (
             <li key={idx}>{lim}</li>
           ))}
           <li>
-            <strong>Data Privacy:</strong> Historical sales records are evaluated strictly locally on the client/application server. Private sales data is never shared with external AI services without explicit user initiation.
+            <strong>Data Confidentiality:</strong> All sales numbers are processed strictly on your secure server. Private transaction logs are never shared with third-party language models without explicit user invocation.
           </li>
         </ul>
       </div>

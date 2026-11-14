@@ -12,13 +12,16 @@ import {
   Sparkles, 
   Cpu, 
   ShieldAlert, 
-  Coins, 
-  Globe2,
+  TrendingUp, 
+  History, 
   CheckCircle2,
   Database,
   Flame,
   Activity,
-  X
+  X,
+  FileSpreadsheet,
+  ChevronDown,
+  ShoppingCart
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -43,93 +46,107 @@ export function Navbar({ onOpenOnboarding, onOpenGroqChat, activeTab, setActiveT
   const [bizDropdownOpen, setBizDropdownOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [isCloudStatusModalOpen, setIsCloudStatusModalOpen] = useState(false);
-  const [systemStatus, setSystemStatus] = useState<any>(null);
 
   const criticalCount = recommendations.filter(r => r.urgency === 'critical').length;
   const urgentCount = recommendations.filter(r => r.urgency === 'urgent').length;
+  const totalActionCount = criticalCount + urgentCount;
 
   // Initialize Firebase Analytics client-side
   useEffect(() => {
     initAnalytics().catch(() => {});
   }, []);
 
-  // Fetch live system status
-  const loadSystemStatus = async () => {
-    try {
-      const res = await fetch('/api/system/status');
-      const data = await res.json();
-      setSystemStatus(data);
-    } catch (e) {
-      console.warn('System status check error:', e);
-    }
-  };
-
-  useEffect(() => {
-    loadSystemStatus();
-  }, []);
+  const navItems = [
+    { id: 'overview', label: 'Dashboard', icon: Boxes },
+    { 
+      id: 'recommendations', 
+      label: 'Reorder Planning', 
+      icon: ShieldAlert,
+      badge: totalActionCount > 0 ? totalActionCount : undefined,
+      badgeColor: criticalCount > 0 ? 'bg-rose-500 text-white' : 'bg-indigo-500 text-white'
+    },
+    { id: 'forecasting', label: 'Demand Forecasting', icon: TrendingUp },
+    { id: 'products', label: 'Products & Stock', icon: Building2 },
+    { id: 'movements', label: 'Movement Audit', icon: History },
+    { id: 'purchase_orders', label: 'Purchase Orders', icon: ShoppingCart },
+    { id: 'csv_import', label: 'Data Import / Export', icon: FileSpreadsheet },
+    { id: 'toc_lab', label: 'Logic Engine & Diagnostics', icon: Cpu },
+  ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/85 backdrop-blur-xl transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+        
+        {/* Top Header Bar */}
+        <div className="flex items-center justify-between h-16 gap-3">
           
-          {/* Logo & Platform Name */}
+          {/* Brand Logo & Name */}
           <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 p-0.5 shadow-lg shadow-indigo-500/20">
+            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 p-0.5 shadow-md shadow-indigo-500/25">
               <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                <Boxes className="w-5 h-5 text-indigo-400" />
+                <Boxes className="w-4 h-4 text-indigo-400" />
               </div>
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-500"></span>
+              <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
             </div>
+
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-lg bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-transparent">
-                  FlowCast <span className="text-xs uppercase font-mono px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">TOC</span>
+                <span className="font-extrabold text-base tracking-tight bg-gradient-to-r from-white via-slate-100 to-slate-300 bg-clip-text text-transparent">
+                  FlowCast
                 </span>
-                
-                {/* Live Integrations Badge */}
-                <button
-                  onClick={() => {
-                    loadSystemStatus();
-                    setIsCloudStatusModalOpen(true);
-                  }}
-                  className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-[10px] font-semibold hover:bg-emerald-500/20 transition-colors"
-                  title="View Cloud, AI & Database status"
-                >
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span>Cloud & AI Live</span>
-                </button>
+                <span className="text-[10px] uppercase font-semibold tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                  Enterprise
+                </span>
+                {isSampleData && (
+                  <span className="hidden md:inline-flex text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                    Sample Data
+                  </span>
+                )}
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
-                Explainable Inventory Planning & Automata Engine
+              <p className="text-[11px] text-slate-400 hidden sm:block leading-none mt-0.5">
+                Intelligent Retail Demand & Replenishment
               </p>
             </div>
           </div>
 
-          {/* Business & Multi-Tenant Switcher */}
-          <div className="flex items-center gap-3">
+          {/* Right Header Controls */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            
+            {/* Live System Status Pill */}
+            <button
+              onClick={() => setIsCloudStatusModalOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/25 text-[11px] font-medium transition-all shadow-sm"
+              title="Cloud & AI Integrations Status"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="hidden sm:inline">Cloud & AI Active</span>
+              <span className="sm:hidden">Active</span>
+            </button>
+
+            {/* Business / Storefront Selector */}
             <div className="relative">
               <button
                 onClick={() => setBizDropdownOpen(!bizDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-850 hover:border-slate-700 text-xs font-medium text-slate-200 transition-all shadow-sm"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900/70 hover:bg-slate-800 text-xs font-medium text-slate-200 transition-all"
               >
                 <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="max-w-[140px] truncate">{currentBusiness.name}</span>
-                <span className="text-slate-400 text-[10px] font-mono px-1 rounded bg-slate-800">
+                <span className="max-w-[120px] sm:max-w-[160px] truncate">{currentBusiness.name}</span>
+                <span className="text-slate-400 text-[10px] font-mono px-1 py-0.2 rounded bg-slate-800 border border-slate-700/60">
                   {currentBusiness.currency} ({currentBusiness.currencySymbol})
                 </span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
 
               {bizDropdownOpen && (
                 <div 
-                  className="absolute right-0 mt-2 w-72 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+                  className="absolute right-0 mt-2 w-72 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100"
                   onMouseLeave={() => setBizDropdownOpen(false)}
                 >
-                  <div className="px-2 py-1.5 text-[11px] font-semibold uppercase text-slate-400 tracking-wider">
-                    Switch Business Storefront
+                  <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Switch Storefront
                   </div>
                   <div className="space-y-1">
                     {businesses.map((biz) => (
@@ -139,17 +156,17 @@ export function Navbar({ onOpenOnboarding, onOpenGroqChat, activeTab, setActiveT
                           setCurrentBusinessId(biz.id);
                           setBizDropdownOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs text-left transition-colors ${
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-left transition-colors ${
                           biz.id === currentBusiness.id
-                            ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30'
+                            ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 font-medium'
                             : 'hover:bg-slate-800 text-slate-300'
                         }`}
                       >
                         <div className="truncate pr-2">
-                          <p className="font-medium truncate">{biz.name}</p>
-                          <p className="text-[10px] text-slate-400">{biz.timezone} • {biz.defaultUnit}</p>
+                          <p className="truncate font-semibold">{biz.name}</p>
+                          <p className="text-[10px] text-slate-400">{biz.timezone} • Unit: {biz.defaultUnit}</p>
                         </div>
-                        <span className="text-[11px] font-mono font-bold text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded">
+                        <span className="text-[11px] font-mono font-bold text-slate-300 bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
                           {biz.currencySymbol}
                         </span>
                       </button>
@@ -162,10 +179,10 @@ export function Navbar({ onOpenOnboarding, onOpenGroqChat, activeTab, setActiveT
                         setBizDropdownOpen(false);
                         onOpenOnboarding();
                       }}
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors"
+                      className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Add New Business (Guided Setup)
+                      <span>New Store Setup Wizard</span>
                     </button>
                   </div>
                 </div>
@@ -173,21 +190,22 @@ export function Navbar({ onOpenOnboarding, onOpenGroqChat, activeTab, setActiveT
             </div>
 
             {/* Role Switcher */}
-            <div className="relative hidden md:block">
+            <div className="relative hidden lg:block">
               <button
                 onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-xs font-medium text-slate-300"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-xs font-medium text-slate-300 transition-colors"
               >
                 <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
                 <span className="capitalize">{userRole}</span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
               </button>
 
               {roleDropdownOpen && (
                 <div 
-                  className="absolute right-0 mt-2 w-48 rounded-xl bg-slate-900 border border-slate-800 shadow-xl p-1.5 z-50"
+                  className="absolute right-0 mt-2 w-44 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-100"
                   onMouseLeave={() => setRoleDropdownOpen(false)}
                 >
-                  <div className="px-2 py-1 text-[10px] uppercase text-slate-400 font-semibold">Active Role</div>
+                  <div className="px-2 py-1 text-[10px] uppercase font-bold text-slate-400">Account Role</div>
                   {(['owner', 'staff', 'viewer'] as const).map(role => (
                     <button
                       key={role}
@@ -199,9 +217,9 @@ export function Navbar({ onOpenOnboarding, onOpenGroqChat, activeTab, setActiveT
                         userRole === role ? 'bg-cyan-500/20 text-cyan-300 font-semibold' : 'text-slate-300 hover:bg-slate-800'
                       }`}
                     >
-                      {role === 'owner' && 'Owner (Full Access)'}
-                      {role === 'staff' && 'Staff (Floor Actions)'}
-                      {role === 'viewer' && 'Viewer (Read-only)'}
+                      {role === 'owner' && 'Owner (Full Admin)'}
+                      {role === 'staff' && 'Staff (Floor Ops)'}
+                      {role === 'viewer' && 'Viewer (Read-Only)'}
                     </button>
                   ))}
                 </div>
@@ -212,66 +230,53 @@ export function Navbar({ onOpenOnboarding, onOpenGroqChat, activeTab, setActiveT
             {isSampleData && (
               <button
                 onClick={resetToSampleData}
-                title="Reset to initial sample retail catalog"
-                className="p-2 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                title="Reset sample retail store data"
+                className="p-1.5 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </button>
             )}
 
-            {/* Groq AI Assistant Slide-over trigger */}
+            {/* Groq AI Copilot Button */}
             <button
               onClick={onOpenGroqChat}
-              className="relative group flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-medium shadow-md shadow-indigo-600/30 transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/30 transition-all active:scale-95"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin-slow" />
-              <span>AI Assistant</span>
-              <span className="hidden sm:inline text-[10px] bg-white/20 px-1 rounded font-mono">Groq LLaMA-3</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>AI Copilot</span>
             </button>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center space-x-1 overflow-x-auto py-2 no-scrollbar border-t border-slate-800/60">
-          {[
-            { id: 'overview', label: 'Dashboard', icon: Boxes },
-            { 
-              id: 'recommendations', 
-              label: 'Reorder Planning', 
-              icon: ShieldAlert,
-              badge: (criticalCount + urgentCount) > 0 ? (criticalCount + urgentCount) : undefined,
-              badgeColor: criticalCount > 0 ? 'bg-rose-500 text-white' : 'bg-indigo-500 text-white'
-            },
-            { id: 'forecasting', label: 'Demand Forecasting', icon: Coins },
-            { id: 'products', label: 'Product Catalog & Stock', icon: Building2 },
-            { id: 'movements', label: 'Movement Audit Log', icon: Globe2 },
-            { id: 'purchase_orders', label: 'Purchase Orders', icon: UserCheck },
-            { id: 'csv_import', label: 'CSV Data Import & Export', icon: Plus },
-            { id: 'toc_lab', label: 'TOC Automata Lab', icon: Cpu },
-          ].map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+        {/* Tab Navigation Ribbon */}
+        <div className="flex items-center space-x-1.5 overflow-x-auto py-2.5 no-scrollbar border-t border-slate-800/60">
+          {navItems.map(item => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
             return (
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                key={item.id}
+                onClick={() => setActiveTab(item.id)}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
                   isActive
-                    ? 'bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 border border-transparent'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/25 font-semibold'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900 border border-transparent'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`} />
-                <span>{tab.label}</span>
-                {tab.badge !== undefined && (
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${tab.badgeColor}`}>
-                    {tab.badge}
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <span>{item.label}</span>
+                {item.badge !== undefined && (
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    isActive ? 'bg-white text-indigo-700' : item.badgeColor
+                  }`}>
+                    {item.badge}
                   </span>
                 )}
               </button>
             );
           })}
         </div>
+
       </div>
 
       {/* Cloud & AI Diagnostic Status Modal */}
@@ -290,25 +295,23 @@ export function Navbar({ onOpenOnboarding, onOpenGroqChat, activeTab, setActiveT
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               
-              {/* Groq Chat */}
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="font-bold text-white block">Groq Chatbot API</span>
+                    <span className="font-bold text-white block">Groq AI Assistant</span>
                     <span className="text-[10px] text-slate-400 font-mono">LLaMA 3.3 70B Versatile</span>
                   </div>
                 </div>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Live Active
+                  <CheckCircle2 className="w-3 h-3" /> Connected
                 </span>
               </div>
 
-              {/* Groq Insights */}
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
@@ -320,11 +323,10 @@ export function Navbar({ onOpenOnboarding, onOpenGroqChat, activeTab, setActiveT
                   </div>
                 </div>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Live Active
+                  <CheckCircle2 className="w-3 h-3" /> Connected
                 </span>
               </div>
 
-              {/* Supabase PostgreSQL */}
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
@@ -336,11 +338,10 @@ export function Navbar({ onOpenOnboarding, onOpenGroqChat, activeTab, setActiveT
                   </div>
                 </div>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Migrations Applied
+                  <CheckCircle2 className="w-3 h-3" /> Schema Active
                 </span>
               </div>
 
-              {/* Firebase */}
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
