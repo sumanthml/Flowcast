@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAnalytics, isSupported } from 'firebase/analytics';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDeaLEE1bTWou8_J56LYLG36bEvJnYYZjo",
@@ -13,6 +14,11 @@ const firebaseConfig = {
 
 // Initialize Firebase (Singleton pattern to prevent re-initialization during SSR/hot-reload)
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+// Initialize Firebase Authentication
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 // Initialize Firebase Analytics safely for client-side browser only
 export const initAnalytics = async () => {

@@ -44,8 +44,14 @@ export function ForecastingTab({ selectedProductId }: ForecastingTabProps) {
 
   if (!activeProduct) {
     return (
-      <div className="p-12 text-center text-slate-500 text-xs">
-        No products available in current catalog. Add a product to run forecasts.
+      <div className="p-16 text-center rounded-3xl bg-slate-900/60 border border-slate-800 max-w-lg mx-auto my-12">
+        <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mx-auto mb-4">
+          <TrendingUp className="w-6 h-6" />
+        </div>
+        <h3 className="text-base font-bold text-white">No Products in Catalog</h3>
+        <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+          Statistical demand forecasting requires at least one product in your inventory catalog. Add products or import historical sales to view trend analysis and confidence intervals.
+        </p>
       </div>
     );
   }

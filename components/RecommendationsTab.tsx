@@ -167,7 +167,26 @@ export function RecommendationsTab({ onNavigateToTab }: RecommendationsTabProps)
 
       {/* Recommendations Cards Grid */}
       <div className="space-y-4">
-        {filteredRecs.map(rec => {
+        {filteredRecs.length === 0 ? (
+          <div className="p-12 text-center rounded-2xl bg-slate-900/60 border border-slate-800">
+            <ShieldAlert className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+            <h3 className="text-sm font-bold text-white">No Reorder Recommendations</h3>
+            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+              {products.length === 0 
+                ? "No products found in your inventory catalog yet. Add products or import CSV to generate recommendations." 
+                : "All catalog items are within healthy operating parameters or have adequate coverage."}
+            </p>
+            {products.length === 0 && (
+              <button
+                onClick={() => onNavigateToTab('products')}
+                className="mt-4 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/25"
+              >
+                + Add Products to Catalog
+              </button>
+            )}
+          </div>
+        ) : (
+          filteredRecs.map(rec => {
           const stateMeta = DFA_STATES[rec.dfaStateId as AutomatonStateId] || DFA_STATES.Q0_OPTIMAL;
           const isExpanded = expandedRecId === rec.id;
           const isEditing = editingRecId === rec.id;
@@ -369,7 +388,7 @@ export function RecommendationsTab({ onNavigateToTab }: RecommendationsTabProps)
 
             </div>
           );
-        })}
+        }))}
       </div>
 
     </div>

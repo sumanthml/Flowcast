@@ -322,8 +322,26 @@ export function PurchaseOrdersTab() {
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 text-xs">
-            <h2 className="text-sm font-bold text-white mb-4">Create Draft Purchase Order</h2>
-            <form onSubmit={handleCreateManualPO} className="space-y-4">
+            <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-800">
+              <h2 className="text-sm font-bold text-white">Create Draft Purchase Order</h2>
+              <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            {products.length === 0 ? (
+              <div className="space-y-4 py-2">
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs leading-relaxed">
+                  No products exist in your catalog yet. You must create or import at least one product before drafting a purchase order.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleCreateManualPO} className="space-y-4">
               <div>
                 <label className="text-slate-400 block mb-1">Select Supplier *</label>
                 <select
@@ -400,6 +418,7 @@ export function PurchaseOrdersTab() {
                 </button>
               </div>
             </form>
+            )}
           </div>
         </div>
       )}

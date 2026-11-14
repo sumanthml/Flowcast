@@ -72,6 +72,8 @@ export function ProductsTab({ onOpenMovementModal }: ProductsTabProps) {
     if (!sku.trim() || !name.trim()) return;
 
     const matchedSupplier = suppliers.find(s => s.id === supplierId);
+    const resolvedSupplierName = matchedSupplier?.name || 'Direct Supplier';
+    const resolvedSupplierId = matchedSupplier?.id || supplierId || 'sup_primary';
 
     if (editingProduct) {
       updateProduct(editingProduct.id, {
@@ -80,8 +82,8 @@ export function ProductsTab({ onOpenMovementModal }: ProductsTabProps) {
         category,
         unitOfMeasure,
         barcode: barcode || undefined,
-        supplierId,
-        supplierName: matchedSupplier?.name,
+        supplierId: resolvedSupplierId,
+        supplierName: resolvedSupplierName,
         reorderPoint,
         safetyStock,
         packSize,
@@ -100,8 +102,8 @@ export function ProductsTab({ onOpenMovementModal }: ProductsTabProps) {
         category,
         unitOfMeasure,
         barcode: barcode || undefined,
-        supplierId,
-        supplierName: matchedSupplier?.name,
+        supplierId: resolvedSupplierId,
+        supplierName: resolvedSupplierName,
         currentStock,
         reservedStock,
         reorderPoint,
@@ -235,7 +237,16 @@ export function ProductsTab({ onOpenMovementModal }: ProductsTabProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {filteredProducts.map(p => {
+              {filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-12 text-center text-slate-500">
+                    <Package className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-300">No products found in catalog</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Click '+ Add Product' above to register your first SKU.</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredProducts.map(p => {
                 const usable = Math.max(0, p.currentStock - p.reservedStock);
                 const isBelowROP = usable <= p.reorderPoint;
 
@@ -325,7 +336,7 @@ export function ProductsTab({ onOpenMovementModal }: ProductsTabProps) {
                     </td>
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>
@@ -401,9 +412,13 @@ export function ProductsTab({ onOpenMovementModal }: ProductsTabProps) {
                   onChange={e => setSupplierId(e.target.value)}
                   className="w-full px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white"
                 >
-                  {suppliers.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.leadTimeDays}d lead time)</option>
-                  ))}
+                  {suppliers.length === 0 ? (
+                    <option value="sup_primary">Direct Supplier (7d default lead time)</option>
+                  ) : (
+                    suppliers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.leadTimeDays}d lead time)</option>
+                    ))
+                  )}
                 </select>
               </div>
 

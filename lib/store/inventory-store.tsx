@@ -20,12 +20,14 @@ import {
   generateSeedSales 
 } from '@/lib/store/mock-db';
 import { calculateReorderRecommendation } from '@/lib/planning/reorder-engine';
+import { useAuth } from '@/lib/firebase/auth-context';
 
 interface InventoryContextType {
   businesses: Business[];
   currentBusiness: Business;
   setCurrentBusinessId: (id: string) => void;
   createBusiness: (biz: Omit<Business, 'id' | 'createdAt' | 'updatedAt'>) => Business;
+  hasCustomBusiness: boolean;
   
   userRole: UserRole;
   setUserRole: (role: UserRole) => void;
@@ -59,77 +61,122 @@ interface InventoryContextType {
   recommendations: ReorderRecommendation[];
   updateRecommendationStatus: (recId: string, status: ReorderRecommendation['status'], modifiedQty?: number) => void;
   
-  resetToSampleData: () => void;
+  loadSampleDemoData: () => void;
   clearAllBusinessData: () => void;
   isSampleData: boolean;
 }
 
 const InventoryContext = createContext<InventoryContextType | null>(null);
 
-const STORAGE_KEY_PREFIX = 'flowcast_toc_data_v2_';
+const DEFAULT_WORKSPACE: Business = {
+  id: 'biz_default',
+  name: 'My Storefront',
+  currency: 'USD',
+  currencySymbol: '$',
+  timezone: 'UTC',
+  defaultUnit: 'units',
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
-  const [businesses, setBusinesses] = useState<Business[]>(INITIAL_BUSINESSES);
-  const [currentBusinessId, setCurrentBusinessId] = useState<string>('biz_electronics');
+  const { user } = useAuth();
+  
+  // Storage key scoped to authenticated user UID (or guest)
+  const storagePrefix = user ? `flowcast_v3_${user.uid}_` : 'flowcast_v3_guest_';
+
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [currentBusinessId, setCurrentBusinessId] = useState<string>('');
   const [userRole, setUserRole] = useState<UserRole>('owner');
-  const [suppliers, setSuppliers] = useState<Supplier[]>(INITIAL_SUPPLIERS);
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
-  const [movements, setMovements] = useState<InventoryMovement[]>(INITIAL_MOVEMENTS);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [movements, setMovements] = useState<InventoryMovement[]>([]);
   const [sales, setSales] = useState<SalesRecord[]>([]);
-  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>(INITIAL_PURCHASE_ORDERS);
-  const [isSampleData, setIsSampleData] = useState<boolean>(true);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
+  const [isSampleData, setIsSampleData] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
-  // Initialize from LocalStorage or populate rich seed
+  // Load purely dynamic user data on mount or auth change
   useEffect(() => {
     try {
-      const storedBiz = localStorage.getItem(`${STORAGE_KEY_PREFIX}businesses`);
-      const storedSuppliers = localStorage.getItem(`${STORAGE_KEY_PREFIX}suppliers`);
-      const storedProducts = localStorage.getItem(`${STORAGE_KEY_PREFIX}products`);
-      const storedMovements = localStorage.getItem(`${STORAGE_KEY_PREFIX}movements`);
-      const storedSales = localStorage.getItem(`${STORAGE_KEY_PREFIX}sales`);
-      const storedPOs = localStorage.getItem(`${STORAGE_KEY_PREFIX}pos`);
-      const storedIsSample = localStorage.getItem(`${STORAGE_KEY_PREFIX}is_sample`);
+      const storedBiz = localStorage.getItem(`${storagePrefix}businesses`);
+      const storedSuppliers = localStorage.getItem(`${storagePrefix}suppliers`);
+      const storedProducts = localStorage.getItem(`${storagePrefix}products`);
+      const storedMovements = localStorage.getItem(`${storagePrefix}movements`);
+      const storedSales = localStorage.getItem(`${storagePrefix}sales`);
+      const storedPOs = localStorage.getItem(`${storagePrefix}pos`);
+      const storedIsSample = localStorage.getItem(`${storagePrefix}is_sample`);
 
-      if (storedBiz && storedProducts) {
-        setBusinesses(JSON.parse(storedBiz));
-        if (storedSuppliers) setSuppliers(JSON.parse(storedSuppliers));
-        setProducts(JSON.parse(storedProducts));
-        if (storedMovements) setMovements(JSON.parse(storedMovements));
-        if (storedSales) setSales(JSON.parse(storedSales));
-        if (storedPOs) setPurchaseOrders(JSON.parse(storedPOs));
-        setIsSampleData(storedIsSample === 'true');
+      if (storedBiz) {
+        const parsedBiz = JSON.parse(storedBiz);
+        setBusinesses(parsedBiz);
+        if (parsedBiz.length > 0) {
+          setCurrentBusinessId(parsedBiz[0].id);
+        }
       } else {
-        // First load: generate rich sales seed
-        const initialSales = generateSeedSales();
-        setSales(initialSales);
-        setIsSampleData(true);
+        // Start clean with NO businesses or auto-create a clean single store
+        const userInitialBiz: Business = {
+          id: `biz_${user?.uid ? user.uid.substring(0, 8) : 'store_1'}`,
+          name: user?.displayName ? `${user.displayName}'s Store` : 'My Retail Store',
+          currency: 'USD',
+          currencySymbol: '$',
+          timezone: 'America/New_York',
+          defaultUnit: 'pcs',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setBusinesses([userInitialBiz]);
+        setCurrentBusinessId(userInitialBiz.id);
       }
+
+      // Products, suppliers, movements, sales, POs strictly start empty unless previously saved by user!
+      if (storedSuppliers) setSuppliers(JSON.parse(storedSuppliers));
+      else setSuppliers([]);
+
+      if (storedProducts) setProducts(JSON.parse(storedProducts));
+      else setProducts([]);
+
+      if (storedMovements) setMovements(JSON.parse(storedMovements));
+      else setMovements([]);
+
+      if (storedSales) setSales(JSON.parse(storedSales));
+      else setSales([]);
+
+      if (storedPOs) setPurchaseOrders(JSON.parse(storedPOs));
+      else setPurchaseOrders([]);
+
+      setIsSampleData(storedIsSample === 'true');
     } catch (e) {
-      console.warn('Storage read error, using memory fallback:', e);
-      setSales(generateSeedSales());
+      console.warn('Storage read error, using clean empty store:', e);
+      setBusinesses([DEFAULT_WORKSPACE]);
+      setCurrentBusinessId(DEFAULT_WORKSPACE.id);
+      setProducts([]);
+      setSuppliers([]);
+      setSales([]);
+      setMovements([]);
+      setPurchaseOrders([]);
     } finally {
       setIsInitialized(true);
     }
-  }, []);
+  }, [user, storagePrefix]);
 
-  // Sync to LocalStorage on change
+  // Persist strictly to user's LocalStorage on change
   useEffect(() => {
     if (!isInitialized) return;
     try {
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}businesses`, JSON.stringify(businesses));
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}suppliers`, JSON.stringify(suppliers));
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}products`, JSON.stringify(products));
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}movements`, JSON.stringify(movements));
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}sales`, JSON.stringify(sales));
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}pos`, JSON.stringify(purchaseOrders));
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}is_sample`, String(isSampleData));
+      localStorage.setItem(`${storagePrefix}businesses`, JSON.stringify(businesses));
+      localStorage.setItem(`${storagePrefix}suppliers`, JSON.stringify(suppliers));
+      localStorage.setItem(`${storagePrefix}products`, JSON.stringify(products));
+      localStorage.setItem(`${storagePrefix}movements`, JSON.stringify(movements));
+      localStorage.setItem(`${storagePrefix}sales`, JSON.stringify(sales));
+      localStorage.setItem(`${storagePrefix}pos`, JSON.stringify(purchaseOrders));
+      localStorage.setItem(`${storagePrefix}is_sample`, String(isSampleData));
     } catch (e) {
       console.warn('Storage write error:', e);
     }
-  }, [businesses, suppliers, products, movements, sales, purchaseOrders, isSampleData, isInitialized]);
+  }, [businesses, suppliers, products, movements, sales, purchaseOrders, isSampleData, isInitialized, storagePrefix]);
 
-  const currentBusiness = businesses.find(b => b.id === currentBusinessId) || businesses[0] || INITIAL_BUSINESSES[0];
+  const currentBusiness = businesses.find(b => b.id === currentBusinessId) || businesses[0] || DEFAULT_WORKSPACE;
 
   // Business-scoped entities
   const scopedProducts = products.filter(p => p.businessId === currentBusiness.id && !p.isArchived);
@@ -138,7 +185,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const scopedMovements = movements.filter(m => m.businessId === currentBusiness.id);
   const scopedPOs = purchaseOrders.filter(po => po.businessId === currentBusiness.id);
 
-  // Dynamic recommendations calculation
+  // Dynamic recommendations calculation - purely reactive to user's real products & sales
   const [recStatuses, setRecStatuses] = useState<Record<string, { status: ReorderRecommendation['status']; modifiedQty?: number }>>({});
 
   const recommendations: ReorderRecommendation[] = scopedProducts.map(prod => {
@@ -197,7 +244,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     };
     setProducts(prev => [...prev, newProd]);
 
-    // Record initial stock creation movement
+    // Record initial stock opening movement if stock > 0
     if (newProd.currentStock > 0) {
       recordMovement(
         newProd.id,
@@ -250,13 +297,11 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       newStock,
       reason,
       referenceId,
-      performedBy: userRole === 'owner' ? 'Owner Admin' : 'Floor Staff',
+      performedBy: userRole === 'owner' ? (user?.displayName || 'Owner Admin') : 'Store Staff',
       timestamp: new Date().toISOString(),
     };
 
     setMovements(prev => [movement, ...prev]);
-
-    // Update product stock level in state
     updateProduct(productId, { currentStock: newStock });
   };
 
@@ -284,8 +329,9 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
     const newSalesList: SalesRecord[] = [];
     records.forEach((r, idx) => {
-      // Find matching product by SKU
-      const matched = scopedProducts.find(p => p.sku.toLowerCase() === r.productSku.toLowerCase() || p.id === r.productId);
+      const matched = scopedProducts.find(
+        p => p.sku.toLowerCase() === r.productSku.toLowerCase() || p.id === r.productId
+      );
       if (!matched) {
         errors.push(`Row #${idx + 1}: SKU '${r.productSku}' does not exist in product catalog.`);
         return;
@@ -360,7 +406,6 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         const newIncoming = Math.max(0, prod.incomingStock - item.totalQuantity);
         updateProduct(item.productId, { incomingStock: newIncoming });
         
-        // Record traceable movement
         recordMovement(
           item.productId,
           'purchase_received',
@@ -374,7 +419,8 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     updatePOStatus(poId, 'received');
   };
 
-  const resetToSampleData = () => {
+  // Explicit action ONLY if user deliberately requests to test with a demo dataset
+  const loadSampleDemoData = () => {
     setBusinesses(INITIAL_BUSINESSES);
     setCurrentBusinessId('biz_electronics');
     setSuppliers(INITIAL_SUPPLIERS);
@@ -402,6 +448,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         currentBusiness,
         setCurrentBusinessId,
         createBusiness,
+        hasCustomBusiness: businesses.length > 0 && businesses[0].id !== 'biz_default',
         userRole,
         setUserRole,
         suppliers: scopedSuppliers,
@@ -421,7 +468,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
         receivePurchaseOrder,
         recommendations,
         updateRecommendationStatus,
-        resetToSampleData,
+        loadSampleDemoData,
         clearAllBusinessData,
         isSampleData,
       }}

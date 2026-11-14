@@ -144,7 +144,16 @@ export function MovementsTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
-              {filteredMovements.map(m => {
+              {filteredMovements.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                    <History className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-slate-300">No inventory movements recorded</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Stock adjustments, received POs, and sales will automatically appear here as traceable audit entries.</p>
+                  </td>
+                </tr>
+              ) : (
+                filteredMovements.map(m => {
                 const isPositive = m.quantityChange > 0;
 
                 return (
@@ -193,7 +202,7 @@ export function MovementsTab() {
                     </td>
                   </tr>
                 );
-              })}
+              }))}
             </tbody>
           </table>
         </div>

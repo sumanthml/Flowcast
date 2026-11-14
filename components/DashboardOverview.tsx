@@ -14,11 +14,16 @@ import {
   Package, 
   Truck, 
   Layers, 
-  ChevronRight,
-  ShieldCheck,
-  Zap,
-  DollarSign,
-  BarChart3
+  ChevronRight, 
+  ShieldCheck, 
+  Zap, 
+  DollarSign, 
+  BarChart3,
+  Plus,
+  FileSpreadsheet,
+  RotateCcw,
+  Boxes,
+  ArrowRight
 } from 'lucide-react';
 
 interface DashboardOverviewProps {
@@ -34,7 +39,8 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
     purchaseOrders,
     updateRecommendationStatus,
     createPurchaseOrder,
-    suppliers
+    suppliers,
+    loadSampleDemoData
   } = useInventory();
 
   const [insightLoading, setInsightLoading] = useState(false);
@@ -78,12 +84,6 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
   const handleQuickOrder = (rec: typeof recommendations[0]) => {
     const prod = products.find(p => p.id === rec.productId);
     if (!prod) return;
-
-    const targetSupplier = suppliers.find(s => s.id === rec.supplierId) || {
-      id: rec.supplierId,
-      name: rec.supplierName,
-      leadTimeDays: rec.leadTimeDays,
-    };
 
     const orderQty = rec.suggestedQuantity;
     const packs = Math.ceil(orderQty / rec.packSize);
@@ -149,6 +149,123 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
       setInsightLoading(false);
     }
   };
+
+  // If user has zero products in catalog, render an intuitive Onboarding & Quick Start view
+  if (products.length === 0) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-200">
+        
+        {/* Workspace Banner */}
+        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 border border-slate-800 shadow-2xl relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="max-w-2xl relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/25 text-xs font-semibold mb-4">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Workspace Ready: {currentBusiness.name}</span>
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+              Welcome to FlowCast Enterprise
+            </h1>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              Your intelligent retail inventory planning engine is initialized with currency ({currentBusiness.currencySymbol}{currentBusiness.currency}) and timezone ({currentBusiness.timezone}). Add your products or import sales to generate real-time replenishment forecasts.
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => onNavigateToTab('products')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-lg shadow-indigo-600/30 active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add First Product</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateToTab('csv_import')}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+                <span>Import CSV Data</span>
+              </button>
+
+              <button
+                onClick={loadSampleDemoData}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-semibold border border-amber-500/25 transition-all"
+                title="Populate sandbox demo dataset for instant testing"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Load Demo Sandbox</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* 3 Step Setup Guide Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          
+          <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-xs mb-3">
+                1
+              </div>
+              <h3 className="text-sm font-bold text-white">Catalog & Suppliers</h3>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Add your SKUs, reorder points, safety stock buffers, supplier lead times, and unit costs.
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigateToTab('products')}
+              className="mt-4 flex items-center gap-1.5 text-xs text-indigo-400 font-semibold hover:text-indigo-300"
+            >
+              <span>Manage Products</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center font-bold text-xs mb-3">
+                2
+              </div>
+              <h3 className="text-sm font-bold text-white">Historical Sales Data</h3>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Record POS transactions or upload CSV spreadsheets with date, SKU, and quantities sold.
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigateToTab('csv_import')}
+              className="mt-4 flex items-center gap-1.5 text-xs text-cyan-400 font-semibold hover:text-cyan-300"
+            >
+              <span>Open CSV Wizard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs mb-3">
+                3
+              </div>
+              <h3 className="text-sm font-bold text-white">Dynamic Reorder Advisory</h3>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                Review mathematical stockout runway estimates, lead-time demand, and create consolidated draft POs.
+              </p>
+            </div>
+            <button
+              onClick={() => onNavigateToTab('recommendations')}
+              className="mt-4 flex items-center gap-1.5 text-xs text-emerald-400 font-semibold hover:text-emerald-300"
+            >
+              <span>View Reorder Engine</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    );
+  }
 
   // Calculate percentages for visual health bar
   const totalCatalog = recommendations.length || 1;
@@ -245,7 +362,7 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
         </div>
       )}
 
-      {/* KPI Stat Cards (Clean Enterprise Style) */}
+      {/* KPI Stat Cards (International Enterprise Style) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Card 1: Critical Stockout Risk */}
@@ -260,10 +377,10 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-white">{criticalRecs.length}</span>
-            <span className="text-xs text-rose-300 font-medium">SKU(s) below safety stock</span>
+            <span className="text-xs text-rose-300 font-medium">SKU(s) below safety buffer</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
-            Estimated capital to restock: <span className="font-bold text-rose-300">{currentBusiness.currencySymbol}{totalStockoutCapitalRisk.toLocaleString()}</span>
+            Estimated capital required: <span className="font-bold text-rose-300">{currentBusiness.currencySymbol}{totalStockoutCapitalRisk.toLocaleString()}</span>
           </p>
         </div>
 
@@ -282,7 +399,7 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
             <span className="text-xs text-indigo-300 font-medium">order(s) recommended</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
-            Items at or below calculated Reorder Point.
+            Lead times: 5–14 days. Place soon to prevent stockouts.
           </p>
         </div>
 
@@ -290,7 +407,7 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-purple-500/30 hover:border-purple-500/60 shadow-lg transition-all group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-purple-400">
-              Excess Inventory
+              Surplus Stock
             </span>
             <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400 group-hover:scale-110 transition-transform">
               <TrendingDown className="w-4 h-4" />
@@ -298,7 +415,7 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-white">{excessRecs.length}</span>
-            <span className="text-xs text-purple-300 font-medium">SKU(s) &gt; 90 days demand</span>
+            <span className="text-xs text-purple-300 font-medium">SKU(s) &gt; 90 days coverage</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
             Dormant capital tied up: <span className="font-bold text-purple-300">{currentBusiness.currencySymbol}{totalExcessHoldingCapital.toLocaleString()}</span>
@@ -309,7 +426,7 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
         <div className="p-4 rounded-2xl bg-slate-900/80 border border-cyan-500/30 hover:border-cyan-500/60 shadow-lg transition-all group">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-              Inbound Orders
+              Inbound Buffer
             </span>
             <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 group-hover:scale-110 transition-transform">
               <Truck className="w-4 h-4" />
@@ -317,26 +434,26 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-white">{openPOs.length}</span>
-            <span className="text-xs text-cyan-300 font-medium">open PO(s) in transit</span>
+            <span className="text-xs text-cyan-300 font-medium">PO(s) in transit</span>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
-            Shipments buffered against future stockouts.
+            Buffered against stockouts via active open orders.
           </p>
         </div>
       </div>
 
-      {/* Executive Inventory Health Pipeline */}
+      {/* Executive Inventory Health & Risk Pipeline */}
       <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 backdrop-blur-md space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 gap-2">
           <div>
             <div className="flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-indigo-400" />
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                Catalog Inventory Health Pipeline
+                Inventory Health & Risk Pipeline
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Click any status segment to filter products and review replenishment priority
+              Click any status category to filter catalog products and review immediate replenishment actions
             </p>
           </div>
 
@@ -349,13 +466,13 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
                   : 'bg-slate-800/80 text-slate-400 hover:text-white'
               }`}
             >
-              All Items ({recommendations.length})
+              All States ({recommendations.length})
             </button>
             <button
               onClick={() => onNavigateToTab('toc_lab')}
               className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-semibold ml-2"
             >
-              <span>Logic Engine Details</span>
+              <span>Explore Decision Rules</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -363,11 +480,11 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
 
         {/* Visual Segmented Health Bar */}
         <div className="w-full h-3 rounded-full overflow-hidden flex bg-slate-950 p-0.5 border border-slate-800">
-          {pctOptimal > 0 && <div style={{ width: `${pctOptimal}%` }} className="h-full bg-emerald-500 rounded-l-full" title={`Healthy: ${pctOptimal}%`}></div>}
+          {pctOptimal > 0 && <div style={{ width: `${pctOptimal}%` }} className="h-full bg-emerald-500 rounded-l-full" title={`Optimal: ${pctOptimal}%`}></div>}
           {pctWatchlist > 0 && <div style={{ width: `${pctWatchlist}%` }} className="h-full bg-amber-400" title={`Watchlist: ${pctWatchlist}%`}></div>}
-          {pctReorder > 0 && <div style={{ width: `${pctReorder}%` }} className="h-full bg-indigo-500" title={`Reorder Due: ${pctReorder}%`}></div>}
-          {pctCritical > 0 && <div style={{ width: `${pctCritical}%` }} className="h-full bg-rose-500" title={`Critical: ${pctCritical}%`}></div>}
-          {pctExcess > 0 && <div style={{ width: `${pctExcess}%` }} className="h-full bg-purple-500" title={`Overstocked: ${pctExcess}%`}></div>}
+          {pctReorder > 0 && <div style={{ width: `${pctReorder}%` }} className="h-full bg-indigo-500" title={`Reorder Triggered: ${pctReorder}%`}></div>}
+          {pctCritical > 0 && <div style={{ width: `${pctCritical}%` }} className="h-full bg-rose-500" title={`Stockout Imminent: ${pctCritical}%`}></div>}
+          {pctExcess > 0 && <div style={{ width: `${pctExcess}%` }} className="h-full bg-purple-500" title={`Surplus Stock: ${pctExcess}%`}></div>}
           {pctIncoming > 0 && <div style={{ width: `${pctIncoming}%` }} className="h-full bg-cyan-400 rounded-r-full" title={`In Transit: ${pctIncoming}%`}></div>}
         </div>
 
@@ -416,7 +533,7 @@ export function DashboardOverview({ onNavigateToTab, onSelectProductForToc }: Da
               <span>Prioritized Replenishment Action Queue</span>
             </h3>
             <p className="text-xs text-slate-400">
-              Sorted by stockout timeline. Advisory recommendations remain under user control.
+              Sorted by stockout urgency. Advisory recommendations never auto order.
             </p>
           </div>
           <span className="text-xs text-slate-400 font-mono">
